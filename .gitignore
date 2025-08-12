@@ -15,6 +15,7 @@ build/
 venv/
 .env/
 *.env
+backend/.env
 
 # IDE and editor settings
 .vscode/
