@@ -1,40 +1,43 @@
-# VuiCode AI Content Pipeline
+# VuiCode App (E2E MVP)
 
-This repo hosts blog content, video scripts, code demos, and templates for VuiCode.
+A tiny backend + frontend that drives your generator (`tools/generate_content.py`) and runner (`tools/run_all_tests.py`).
 
-## Structure
+## Layout
+vuicode-app/
+  backend/
+    app.py
+    requirements.txt
+  frontend/
+    index.html
+    app.js
+    style.css
+
+## Run the backend
+```bash
+cd /path/to/your/repo    # where tools/generate_content.py exists
+cd vuicode-app/backend
+
+For first time:
+  python -m venv .venv && .venv\Scripts\activate
+  pip install -r requirements.txt
+  or
+  pip install fastapi uvicorn pydantic
+Second time and so on:
+  source .venv/Scripts/activate
+uvicorn app:app --reload --port 8080
 ```
-vuicode/
-  content/
-    blog/           # markdown posts EN/VN
-    video/          # scripts, captions, thumbnails
-    code/           # demo source, tests
-  templates/
-    intro.mp4       # intro (you already created)
-    outro.mp4       # outro (you already created)
-    yt_description.md
-    medium_frontmatter.yaml
-  tools/            # AI & build scripts
-  .env.example
-  README.md
-```
 
-## Quick Start
-1. Copy `.env.example` to `.env` and fill keys.
-2. Create and activate a Python venv.
-3. Install deps:
-   ```bash
-   pip install openai python-dotenv elevenlabs pyyaml markdownify moviepy
-   ```
-4. Generate content (blogs EN/VN + video script):
-   ```bash
-   python tools/generate_content.py
-   ```
-5. (Optional) Create voice audio from script:
-   ```bash
-   python tools/make_audio.py
-   ```
+## Run the frontend
+cd vuicode-app/frontend
+python -m http.server 5500
+--> then open  http://localhost:5500/
+example: Build AI Chatbot with Flask & React
 
-## Notes
-- Replace `templates/intro.mp4` & `templates/outro.mp4` later if you update animations.
-- Keep text/logo inside YouTube's "safe area" when adding overlays.
+## Endpoints
+
+- POST /api/generate → start a job (runs generator with --mode all)
+- GET /api/status/{job_id} → check job status/log tails
+- GET /api/preview/blog?slug=<slug>&lang=en|vi
+- GET /api/preview/script?slug=<slug>
+- POST /api/publish (stub)
+- GET /demo/<slug>/frontend/ → serves generated demo frontend

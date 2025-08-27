@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>VuiCode — E2E MVP</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="wrap">
+    <h1>VuiCode — End-to-End MVP</h1>
+    <p class="sub">Enter a topic, click Generate, watch status, preview blog & script, and (optionally) Publish.</p>
+
+    <div class="card">
+      <h3>1) Enter Topic</h3>
+      <div class="row">
+        <input id="topic" placeholder='e.g., "Build AI Chatbot with Flask & React"' />
+      </div>
+
+      <details open>
+        <summary>Advanced options (required)</summary>
+        <div class="grid">
+          <label>Project name (slug)
+            <input id="projName" placeholder="e.g., chatbot_app" required>
+          </label>
+          <label>Backend template (required)
+            <input id="beTpl" placeholder="e.g., flask" required>
+          </label>
+          <label>Frontend template (required)
+            <input id="feTpl" placeholder="e.g., react" required>
+          </label>
+          <label><input type="checkbox" id="dryRun"> Dry-run (skip LLM customize & repair)</label>
+          <label><input type="checkbox" id="skipRepair"> Skip repair loop</label>
+        </div>
+      </details>
+
+      <div class="row">
+        <button id="btnGen">Generate</button>
+      </div>
+      <pre id="genOut"></pre>
+    </div>
+
+    <div class="card">
+      <h3>2) Status</h3>
+      <div class="row">
+        <input id="jobId" placeholder="job id (auto filled)">
+        <button id="btnPoll">Poll status</button>
+      </div>
+      <pre id="statusOut"></pre>
+    </div>
+
+    <div class="card">
+      <h3>3) Preview</h3>
+      <div class="row">
+        <input id="slug" placeholder="slug (auto filled)">
+        <button id="btnBlogEN">Blog EN</button>
+        <button id="btnBlogVI">Blog VI</button>
+        <button id="btnScript">Video script</button>
+      </div>
+      <pre id="previewOut"></pre>
+      <p class="hint">If a demo frontend was generated and copied, try opening:
+        <code id="demoLink">/demo/&lt;slug&gt;/frontend/</code>
+      </p>
+    </div>
+
+    <div class="card">
+      <h3>4) Publish (stub)</h3>
+      <div class="row">
+        <button id="btnPublish">Publish</button>
+      </div>
+      <pre id="pubOut"></pre>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
