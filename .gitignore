@@ -17,6 +17,7 @@ venv/
 *.env
 backend/.env
 vuicode-app/backend/.venv/
+**/.venv/
 
 # IDE and editor settings
 .vscode/
