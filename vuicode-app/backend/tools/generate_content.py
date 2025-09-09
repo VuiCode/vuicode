@@ -119,6 +119,47 @@ def norm_cmd_list(x: Any) -> List[str]:
         return x
     raise ValueError("command must be a list[str]")
 
+from pathlib import Path
+
+def hydrate_files_from_stack_dir(tpl: dict) -> dict:
+    """
+    Merge textual files found next to this template (…/<stack>/backend/**, frontend/**)
+    into tpl['files'] if they aren't already listed. Also defaults editable_files if missing.
+    """
+    base = Path(tpl.get("__path", "")).parent
+    if not base.exists():
+        return tpl
+
+    existing = dict(tpl.get("files") or {})
+    discovered = {}
+
+    for sub in ("backend", "frontend"):
+        root = base / sub
+        if not root.exists():
+            continue
+        for p in root.rglob("*"):
+            if not p.is_file():
+                continue
+            try:
+                text = p.read_text(encoding="utf-8")
+            except UnicodeDecodeError:
+                continue  # skip binaries
+            rel = f"{sub}/{p.relative_to(root).as_posix()}"
+            discovered[rel] = text
+
+    # MERGE: do not overwrite anything the YAML already specified
+    for k, v in discovered.items():
+        existing.setdefault(k, v)
+
+    if existing:
+        tpl["files"] = existing
+        if not tpl.get("editable_files"):
+            tpl["editable_files"] = [
+                k for k in existing if k.endswith((".py", ".js", ".ts", ".tsx", ".html", ".css"))
+            ][:30]
+    return tpl
+
+
 # -------------------- OpenAI (LLM) --------------------
 def gen_openai(system: str, prompt: str, model: str = "gpt-4o-mini", temperature: float = 0.2) -> str:
     api_key = os.getenv("OPENAI_API_KEY")
@@ -244,24 +285,52 @@ Return ONLY the YAML content for stack.test.yaml (no extra text).
 
 # -------------------- Resolve templates (by name or detect or autogen) --------------------
 def load_or_autogen_template(kind: str, topic: str, name: Optional[str]) -> dict:
-    reg = scan_templates(TEMPLATES_DIR_BE if kind == "backend" else TEMPLATES_DIR_FE)
+    root = TEMPLATES_DIR_BE if kind == "backend" else TEMPLATES_DIR_FE
+    reg  = scan_templates(root)
+
     chosen = name or best_match_by_topic(reg, topic or "")
     if chosen and chosen in reg:
         tpl = reg[chosen]
-        validate_template(kind, tpl)
+
+        # attach path (in case scan_templates didn't)
         if "__path" not in tpl:
-            tpl["__path"] = str((TEMPLATES_DIR_BE if kind=="backend" else TEMPLATES_DIR_FE) / chosen / "stack.test.yaml")
+            tpl["__path"] = str(root / chosen / "stack.test.yaml")
+
+        # 🔹 HYDRATE FIRST so files + editable_files are present
+        tpl = hydrate_files_from_stack_dir(tpl)
+
+        # validate AFTER hydration
+        validate_template(kind, tpl)
+
         print(f"Using existing {kind} stack: {chosen}")
         return tpl
 
     print(f"No {kind} stack matched; auto-generating from topic…")
     tpl = autogen_template(kind, topic or "generic project")
+
     # derive a name for the new stack
     base_name = (name or role_from_topic(topic) or f"{kind}-auto").lower()
-    base_name = re.sub(r"[^a-z0-9\-]+","-", base_name).strip("-") or f"{kind}-auto"
+    base_name = re.sub(r"[^a-z0-9\-]+", "-", base_name).strip("-") or f"{kind}-auto"
+
+    # save the raw autogen first
     save_template(kind, base_name, tpl)
+
     print(f"New {kind} stack saved: {base_name}/stack.test.yaml")
-    return scan_templates(TEMPLATES_DIR_BE if kind=="backend" else TEMPLATES_DIR_FE)[base_name]
+
+    # re-scan to load normalized dict, then hydrate + validate
+    reg = scan_templates(root)
+    tpl = reg[base_name]
+    if "__path" not in tpl:
+        tpl["__path"] = str(root / base_name / "stack.test.yaml")
+
+    # 🔹 HYDRATE FIRST here too
+    tpl = hydrate_files_from_stack_dir(tpl)
+
+    # validate AFTER hydration
+    validate_template(kind, tpl)
+
+    return tpl
+
 
 def role_from_topic(topic: str) -> str:
     t = (topic or "").lower()
@@ -443,6 +512,19 @@ def scaffold_snippets_generic(slug: str):
     snip_dir = BLOG / slug / "snippets"
     write(snip_dir / "backend_main.txt", "# snippet placeholder: backend main logic will be extracted later\n")
     write(snip_dir / "frontend_main.txt", "# snippet placeholder: frontend main logic will be extracted later\n")
+    
+
+def fill_snippets_from_code(slug: str):
+    base = CODE / slug
+    snip = BLOG / slug / "snippets"
+    ensure_dir(snip)
+    be = next((p for p in ["backend/app.py","backend/main.py"] if (base / p).exists()), None)
+    fe = next((p for p in ["frontend/app.js","frontend/index.html","frontend/src/main.jsx"] if (base / p).exists()), None)
+    if be:
+        write(snip / "backend_main.txt", read(base / be))
+    if fe:
+        write(snip / "frontend_main.txt", read(base / fe))
+
 
 def scaffold_blog_and_script(topic: str, slug: str):
     blog_dir = BLOG / slug
@@ -777,6 +859,7 @@ def main():
         title = args.topic or slug
         editable, _cfg = compose_stack(slug, title, be_tpl, fe_tpl)
         scaffold_snippets_generic(slug)
+        fill_snippets_from_code(slug)
 
         # Run initial tests after scaffold
         print("Running initial tests after scaffold…")

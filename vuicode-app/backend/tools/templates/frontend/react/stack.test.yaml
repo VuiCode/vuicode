@@ -1,0 +1,80 @@
+vars:
+  FE_PORT: 5173
+  FE_BASE_URL: http://localhost:5173
+
+# Do NOT declare a backend service here. It comes from the backend template.
+services:
+  - name: frontend
+    cwd: frontend/
+    start: ["npx", "http-server", ".", "-p", "5173", "-c-1"]
+    healthcheck:
+      url: http://localhost:5173
+      timeout_sec: 20
+
+tests:
+  - name: frontend_tests
+    type: junit
+    cwd: frontend/
+    install:
+      - ["npm", "ci"]
+      - ["npx", "playwright", "install", "--with-deps"]
+    cmd: ["npx", "playwright", "test", "--reporter=junit"]
+    junit_xml: test-results/results.xml
+
+files:
+  frontend/package.json: |
+    {
+      "name": "vuicode-frontend",
+      "private": true,
+      "scripts": {
+        "start": "http-server . -p 5173 -c-1",
+        "test": "playwright test --reporter=junit"
+      },
+      "devDependencies": {
+        "@playwright/test": "^1.44.0",
+        "http-server": "^14.1.1"
+      }
+    }
+
+  frontend/index.html: |
+    <!doctype html>
+    <html>
+      <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>VuiCode Frontend</title>
+      </head>
+      <body>
+        <h1 id="title">VuiCode Frontend</h1>
+        <pre id="ping">loading…</pre>
+        <script type="module" src="./app.js"></script>
+      </body>
+    </html>
+
+  frontend/app.js: |
+    async function main() {
+      const el = document.getElementById('ping');
+      try {
+        const res = await fetch('http://localhost:5000/api/ping');
+        const txt = await res.text();
+        el.textContent = txt;
+      } catch (e) {
+        el.textContent = 'error';
+        console.error(e);
+      }
+    }
+    main();
+
+  frontend/tests/example.spec.ts: |
+    import { test, expect } from '@playwright/test';
+
+    test('renders title and shows backend ping', async ({ page }) => {
+      await page.goto('http://localhost:5173');
+      await expect(page.locator('#title')).toHaveText('VuiCode Frontend');
+      await expect(page.locator('#ping')).toHaveText(/pong|error/);
+    });
+
+editable_files:
+  - frontend/app.js
+  - frontend/index.html
+  - frontend/tests/example.spec.ts

@@ -1,0 +1,50 @@
+vars:
+  BE_PORT: 5000
+  BE_API_BASE: http://localhost:5000/api
+
+services:
+  - name: backend
+    cwd: backend/
+    start: ["python", "app.py"]
+    healthcheck:
+      url: http://localhost:5000/api/ping
+      expect: pong
+      timeout_sec: 20
+
+tests:
+  - name: backend_tests
+    type: junit
+    cwd: backend/
+    install:
+      - ["pip", "install", "-r", "requirements.txt"]
+    cmd: ["pytest", "-q", "--junitxml", "test-results/pytest.xml"]
+    junit_xml: test-results/pytest.xml
+
+files:
+  backend/app.py: |
+    from flask import Flask
+    app = Flask(__name__)
+
+    @app.get("/api/ping")
+    def ping():
+        return "pong"
+
+    if __name__ == "__main__":
+        app.run(host="0.0.0.0", port=5000)
+
+  backend/requirements.txt: |
+    flask
+    pytest
+
+  backend/tests/test_ping.py: |
+    from app import app
+
+    def test_ping():
+        client = app.test_client()
+        resp = client.get("/api/ping")
+        assert resp.status_code == 200
+        assert resp.data.decode() == "pong"
+
+editable_files:
+  - backend/app.py
+  - backend/tests/test_ping.py
