@@ -16,7 +16,7 @@ pip install -r requirements.txt
 echo "==============================="
 echo "Venv setup complete!"
 echo "To activate later, run:"
-echo "  source .venv/Scripts/activate"
+echo "  source .vuicode_venv/Scripts/activate"
 echo "==============================="
 
 # How to run: bash setup_env.sh
