@@ -5,7 +5,7 @@ echo "Creating Python 3.11 virtual environment..."
 python -m venv .vuicode_venv
 
 echo "Activating virtual environment..."
-source .venv/Scripts/activate
+source .vuicode_venv/Scripts/activate
 
 echo "Upgrading pip..."
 python -m pip install --upgrade pip
@@ -16,7 +16,7 @@ pip install -r requirements.txt
 echo "==============================="
 echo "Venv setup complete!"
 echo "To activate later, run:"
-echo "  source .vuicode_venv/Scripts/activate"
+echo "  source .venv/Scripts/activate"
 echo "==============================="
 
 # How to run: bash setup_env.sh
