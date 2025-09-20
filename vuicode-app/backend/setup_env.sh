@@ -2,7 +2,7 @@
 echo "Creating Python 3.11 virtual environment..."
 
 # Make sure python3.11 is installed and accessible as python3.11
-python -m venv .venv
+python -m venv .vuicode_venv
 
 echo "Activating virtual environment..."
 source .venv/Scripts/activate
@@ -16,7 +16,7 @@ pip install -r requirements.txt
 echo "==============================="
 echo "Venv setup complete!"
 echo "To activate later, run:"
-echo "  source .venv/Scripts/activate"
+echo "  source .vuicode_venv/Scripts/activate"
 echo "==============================="
 
 # How to run: bash setup_env.sh
